@@ -1,0 +1,140 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import random
+import time
+from datetime import datetime
+import matplotlib as mpl
+
+# Set font that supports emojis
+mpl.rcParams['font.family'] = 'Segoe UI Emoji'
+
+# Load the building dataset
+building_df = pd.read_csv('building_data.csv')
+
+# Compute metrics aggregated by Area
+area_metrics = building_df.groupby('Area').agg({
+    'Energy_Consumption_Per_SqM': 'mean',
+    'Water_Usage_Per_Building': 'mean',
+    'Waste_Recycled_Percentage': 'mean',
+    'Occupancy_Rate': 'mean',
+    'Indoor_Air_Quality': 'mean',
+    'Smart_Devices_Count': 'sum',
+    'Number_of_Residents': 'sum',
+    'Electricity_Bill': 'sum'
+}).reset_index()
+
+# Simulate real-time data for a selected area
+def fetch_real_time_data(selected_area):
+    area_data = area_metrics[area_metrics['Area'] == selected_area].iloc[0]
+    return {
+        'Traffic_Congestion': random.randint(40, 100),
+        'Energy_Use': area_data['Energy_Consumption_Per_SqM'] * 10,
+        'Green_Cover': area_data['Waste_Recycled_Percentage'],
+        'Public_Facilities': area_data['Smart_Devices_Count'],
+        'Air_Quality': area_data['Indoor_Air_Quality'] * 2,
+        'Water_Consumption': area_data['Water_Usage_Per_Building'],
+        'Crime_Rate': random.randint(1, 10),
+        'Building_Count': len(building_df[building_df['Area'] == selected_area]),
+        'Total_Residents': area_data['Number_of_Residents'],
+        'Total_Electricity': area_data['Electricity_Bill']
+    }
+
+# Display KPI cards using matplotlib
+def show_kpi_cards(area_name, data):
+    fig, axs = plt.subplots(2, 3, figsize=(15, 8))
+    fig.suptitle(f"📍 KPI Dashboard for Area: {area_name}", fontsize=18)
+
+    kpis = [
+        ('🚦 Traffic Congestion', f"{data['Traffic_Congestion']}%", '#FF9999'),
+        ('⚡ Energy Use (kWh)', f"{data['Energy_Use']:.1f}", '#66B2FF'),
+        ('🌿 Green Cover (%)', f"{data['Green_Cover']:.1f}", '#99FF99'),
+        ('🏛️ Smart Devices', f"{data['Public_Facilities']}", '#FFCC99'),
+        ('🌬️ Air Quality Index', f"{data['Air_Quality']:.1f}", '#CCCCFF'),
+        ('🚰 Water Usage (L)', f"{data['Water_Consumption']:.1f}", '#FFE599'),
+    ]
+
+    axs = axs.flatten()
+    for i, (title, value, color) in enumerate(kpis):
+        axs[i].set_facecolor(color)
+        axs[i].text(0.5, 0.6, value, fontsize=24, ha='center', va='center', weight='bold')
+        axs[i].text(0.5, 0.25, title, fontsize=12, ha='center', va='center')
+        axs[i].axis('off')
+
+    plt.tight_layout(rect=[0, 0, 1, 0.92])
+    plt.show()
+
+# Display comparative charts
+def show_comparison_charts():
+    df_chart = pd.DataFrame({
+        'Area': area_metrics['Area'],
+        'Energy Use': area_metrics['Energy_Consumption_Per_SqM'] * 10,
+        'Water Usage': area_metrics['Water_Usage_Per_Building'],
+        'Smart Devices': area_metrics['Smart_Devices_Count'],
+        'Air Quality': area_metrics['Indoor_Air_Quality'] * 2
+    })
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig.suptitle(f"📊 Smart City Area Comparison Charts", fontsize=16)
+
+    # Energy Use Bar
+    axes[0, 0].bar(df_chart['Area'], df_chart['Energy Use'], color='skyblue')
+    axes[0, 0].set_title("⚡ Energy Use by Area")
+    axes[0, 0].tick_params(axis='x', rotation=45)
+
+    # Water Usage Bar
+    axes[0, 1].bar(df_chart['Area'], df_chart['Water Usage'], color='lightgreen')
+    axes[0, 1].set_title("💧 Water Usage by Area")
+    axes[0, 1].tick_params(axis='x', rotation=45)
+
+    # Smart Devices Pie
+    axes[1, 0].pie(df_chart['Smart Devices'], labels=df_chart['Area'], autopct='%1.1f%%', startangle=90)
+    axes[1, 0].set_title("🏢 Smart Devices Distribution")
+
+    # Air Quality Line
+    axes[1, 1].plot(df_chart['Area'], df_chart['Air Quality'], marker='o', color='purple')
+    axes[1, 1].set_title("🌫️ Air Quality Index by Area")
+    axes[1, 1].tick_params(axis='x', rotation=45)
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.9)
+    plt.show()
+
+# Main interaction
+def run_dashboard():
+    print("Available Areas:")
+    for idx, area in enumerate(area_metrics['Area']):
+        print(f"{idx + 1}. {area}")
+
+    try:
+        choice = int(input("Select an area by number: ")) - 1
+        if choice < 0 or choice >= len(area_metrics):
+            raise ValueError("Invalid choice.")
+        selected_area = area_metrics['Area'].iloc[choice]
+    except Exception as e:
+        print("Invalid input:", e)
+        return
+
+    metrics = fetch_real_time_data(selected_area)
+
+    # Console Output
+    print("\n--- SMART CITY DASHBOARD ---")
+    print(f"📍 Selected Area: {selected_area}")
+    print(f"📅 Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    print(f"🚦 Traffic Congestion     : {metrics['Traffic_Congestion']}%")
+    print(f"⚡ Energy Use             : {metrics['Energy_Use']:.2f}")
+    print(f"🌱 Green Cover (Recycling): {metrics['Green_Cover']:.1f}%")
+    print(f"🏢 Smart Devices Count    : {metrics['Public_Facilities']}")
+    print(f"🌬️ Air Quality Index     : {metrics['Air_Quality']:.1f}")
+    print(f"💧 Water Usage            : {metrics['Water_Consumption']:.1f} L")
+    print(f"🔒 Crime Rate             : {metrics['Crime_Rate']}")
+    print(f"🏠 Building Count         : {metrics['Building_Count']}")
+    print(f"👥 Total Residents        : {metrics['Total_Residents']}")
+    print(f"💡 Total Electricity Bill : ₹{metrics['Total_Electricity']:,.2f}\n")
+
+    # Visual dashboards
+    show_kpi_cards(selected_area, metrics)
+    show_comparison_charts()
+
+# Run the dashboard
+run_dashboard()
